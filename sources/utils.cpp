@@ -6,8 +6,8 @@
 #include "utils.h"
 
 void clear() {
-  system("rm -rf \"../img/\" && mkdir \"../img/\"");
-  FILE *file = fopen("../log.html", "w");
+  system("rm -rf \"./img/\" && mkdir \"./img/\"");
+  FILE *file = fopen("./log.html", "w");
   if (file != NULL) {
     fclose(file);
   }

@@ -50,7 +50,7 @@ Errors checkCycle(const Tree * tree) {
 }
 
 void dump(const Tree * tree, const char * file, const char * func, const size_t strnum, const char * position, Errors img) {
-  FILE * fp = fopen("../log.html", "a");
+  FILE * fp = fopen("./log.html", "a");
   if (fp == NULL) {
     return;
   }
@@ -137,7 +137,7 @@ void createDirectEdges(FILE * file, Node_t * node) {
 
 void createGraph(const Tree * tree, size_t picture_number) {
   char filename[100];
-  sprintf(filename, "../img/img%zu.txt", picture_number);
+  sprintf(filename, "./img/img%zu.txt", picture_number);
   FILE * file = fopen(filename, "w");
   if (file == NULL) {
     printf("Error opening file!\n");
@@ -170,7 +170,7 @@ void createGraph(const Tree * tree, size_t picture_number) {
   fprintf(file, "}\n");
   fclose(file);
   char command[256];
-  snprintf(command, sizeof(command), "dot -Tpng \"../img/img%zu.txt\" -o \"../img/img%zu.png\" -n2", picture_number, picture_number);
+  snprintf(command, sizeof(command), "dot -Tpng \"./img/img%zu.txt\" -o \"./img/img%zu.png\" -n2", picture_number, picture_number);
   system(command);
 }
 

@@ -24,7 +24,7 @@ $(OBJECTS_DIR)/%.o: $(FILES_DIR)/%.cpp
 	$(CC) $(CFLAGS) -c $< $(FLAGS) -o $@
 
 run: $(EXECUTABLE)
-	cd ./build; ./main; cd ..
+	./build/main
 
 clean:
 	rm -rf $(OBJECTS) $(EXECUTABLE)
