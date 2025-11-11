@@ -6,8 +6,8 @@
 #include "private_tree.h"
 #include "check_tree.h"
 
-static Node_t * findElem(Tree * tree, TreeElem_t elem);
-static void DestroyNode(Node_t * node);
+static Node_t * findElem(Node_t * current, TreeElem_t elem, Node_t ** parent);
+static void DestroyNode(Node_t * node, size_t * len);
 static void PrintNode(Node_t * node, char * type);
 static void NodesToArray(Node_t * node, TreeElem_t * array);
 
@@ -71,18 +71,32 @@ TreeErr treeInsert(Tree * tree, TreeElem_t elem) {
 
 TreeErr subtreeDelete(Tree * tree, TreeElem_t elem) {
   treeVerify(tree, "BEFORE");
-  Node_t * node = findElem(tree, elem);
-  if (node == NULL) {
+  Node_t * parent = NULL;
+  Node_t * current = findElem(tree->root, elem, &parent);
+  if (current == NULL) {
     return DELETE_FAILED;
   }
-  DestroyNode(node);
+  if (parent == NULL) {
+    treeDestroy(tree);
+    treeInit(&tree);
+  }
+  Node_t * left = parent->left;
+  Node_t * right = parent->right;
+  if (parent->left == current) {
+    parent->left = NULL;
+    DestroyNode(left, &tree->len);
+  }
+  else {
+    parent->right = NULL;
+    DestroyNode(right, &tree->len);
+  }
   treeVerify(tree, "AFTER");
   return SUCCESS;
 }
 
-static Node_t * findElem(Tree * tree, TreeElem_t elem) {
-  Node_t * current = tree->root;
+static Node_t * findElem(Node_t * current, TreeElem_t elem, Node_t ** parent) {
   while (current != NULL && current->data != elem) {
+    *parent = current;
     if (elem <= current->data) {
       current = current->left;
     }
@@ -94,18 +108,19 @@ static Node_t * findElem(Tree * tree, TreeElem_t elem) {
 }
 
 void treeDestroy(Tree * tree) {
-  DestroyNode(tree->root);
+  DestroyNode(tree->root, &tree->len);
   free(tree);
 }
 
-static void DestroyNode(Node_t * node) {
+static void DestroyNode(Node_t * node, size_t * len) {
   if (node->left != NULL) {
-    DestroyNode(node->left);
+    DestroyNode(node->left, len);
   }
   if (node->right != NULL) {
-    DestroyNode(node->right);
+    DestroyNode(node->right, len);
   }
   free(node);
+  (*len)--;
   return;
 }
 

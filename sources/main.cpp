@@ -17,6 +17,7 @@ int main() {
   treeInsert(tree, 9);
   treeInsert(tree, 11);
   treeInsert(tree, 15);
+  subtreeDelete(tree, 9);
   TreeElem_t * arr = NULL;
   size_t len = 0;
   TreeToArray(tree, &arr, &len);
