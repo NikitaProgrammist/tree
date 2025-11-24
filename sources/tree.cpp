@@ -6,8 +6,10 @@
 #include "private_tree.h"
 #include "check_tree.h"
 
+static size_t Depth(Node_t * node);
 static Node_t * findElem(Node_t * current, TreeElem_t elem, Node_t ** parent);
 static void DestroyNode(Node_t * node, size_t * len);
+static void changeMin(Tree * tree, Node_t * current);
 static void PrintNode(Node_t * node, char * type);
 static void NodesToArray(Node_t * node, TreeElem_t * array);
 
@@ -20,6 +22,23 @@ TreeErr treeInit(Tree ** tree) {
   (*tree)->root = NULL;
   treeVerify(*tree, "AFTER");
   return SUCCESS;
+}
+
+char treeEmpty(Tree * tree) {
+  return tree->root == NULL;
+}
+
+size_t treeDepth(Tree * tree) {
+  return Depth(tree->root);
+}
+
+static size_t Depth(Node_t * node) {
+  if (node == NULL) {
+    return 0;
+  }
+  size_t left_depth = Depth(node->left);
+  size_t right_depth = Depth(node->right);
+  return (left_depth > right_depth ? left_depth : right_depth) + 1;
 }
 
 TreeErr treeInsert(Tree * tree, TreeElem_t elem) {
@@ -69,6 +88,73 @@ TreeErr treeInsert(Tree * tree, TreeElem_t elem) {
   return SUCCESS;
 }
 
+TreeErr treeDeleteElem(Tree * tree, TreeElem_t elem) {
+  treeVerify(tree, "BEFORE");
+  Node_t * parent = NULL;
+  Node_t * current = findElem(tree->root, elem, &parent);
+  if (current == NULL) {
+    return DELETE_FAILED;
+  }
+  if (parent == NULL) {
+    changeMin(tree, current);
+    return SUCCESS;
+  }
+  Node_t * left = parent->left;
+  Node_t * right = parent->right;
+  if (current->left == NULL && current->right == NULL) {
+    if (parent->left == current) {
+      parent->left = NULL;
+    }
+    else {
+      parent->right = NULL;
+    }
+    DestroyNode(current, &tree->len);
+  }
+  else if (current->left == NULL && current->right != NULL) {
+    if (parent->left == current) {
+      parent->left = current->right;
+    }
+    else {
+      parent->right = current->right;
+    }
+    free(current);
+    tree->len--;
+  }
+  else if (current->left != NULL && current->right == NULL) {
+    if (parent->left == current) {
+      parent->left = current->left;
+    }
+    else {
+      parent->right = current->left;
+    }
+    free(current);
+    tree->len--;
+  }
+  else {
+    changeMin(tree, current);
+  }
+  treeVerify(tree, "AFTER");
+  return SUCCESS;
+}
+
+static void changeMin(Tree * tree, Node_t * current) {
+  Node_t * min = current->right;
+  if (min->left == NULL) {
+    current->data = min->data;
+    free(min);
+    current->right = NULL;
+    tree->len--;
+    return;
+  }
+  while (min->left->left != NULL) {
+    min = min->left;
+  }
+  current->data = min->left->data;
+  free(min->left);
+  min->left = NULL;
+  tree->len--;
+}
+
 TreeErr subtreeDelete(Tree * tree, TreeElem_t elem) {
   treeVerify(tree, "BEFORE");
   Node_t * parent = NULL;
@@ -79,6 +165,7 @@ TreeErr subtreeDelete(Tree * tree, TreeElem_t elem) {
   if (parent == NULL) {
     treeDestroy(tree);
     treeInit(&tree);
+    return SUCCESS;
   }
   Node_t * left = parent->left;
   Node_t * right = parent->right;

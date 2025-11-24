@@ -19,7 +19,10 @@ enum TreeErr {
 };
 
 TreeErr treeInit(Tree ** tree);
+char treeEmpty(Tree * tree);
+size_t treeDepth(Tree * tree);
 TreeErr treeInsert(Tree * tree, TreeElem_t elem);
+TreeErr treeDeleteElem(Tree * tree, TreeElem_t elem);
 TreeErr subtreeDelete(Tree * tree, TreeElem_t elem);
 void treeDestroy(Tree * tree);
 TreeErr treeGetLen(Tree * tree, size_t * len);
