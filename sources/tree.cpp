@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "tree.h"
 #include "private_tree.h"
 #include "check_tree.h"
 
 static size_t Depth(Node_t * node);
+static char Balance(Node_t * left, Node_t * right);
+static Node_t * Right(Node_t * node, size_t * len);
+static Node_t * invert(Node_t * node);
+static void get(Node_t * node, Node_t * parent, TreeElem_t * arr, size_t n);
 static Node_t * findElem(Node_t * current, TreeElem_t elem, Node_t ** parent);
 static void DestroyNode(Node_t * node, size_t * len);
 static void changeMin(Tree * tree, Node_t * current);
@@ -25,10 +30,13 @@ TreeErr treeInit(Tree ** tree) {
 }
 
 char treeEmpty(Tree * tree) {
-  return tree->root == NULL;
+  return tree == NULL || tree->root == NULL;
 }
 
 size_t treeDepth(Tree * tree) {
+  if (tree == NULL) {
+    return 0;
+  }
   return Depth(tree->root);
 }
 
@@ -39,6 +47,115 @@ static size_t Depth(Node_t * node) {
   size_t left_depth = Depth(node->left);
   size_t right_depth = Depth(node->right);
   return (left_depth > right_depth ? left_depth : right_depth) + 1;
+}
+
+char checkBalance(Tree * tree) {
+  if (tree == NULL || tree->root == NULL) {
+    return 1;
+  }
+  return Balance(tree->root->left, tree->root->right);
+}
+
+static char Balance(Node_t * left, Node_t * right) {
+  if (fabs(Depth(left) - Depth(right)) > 1) {
+    return 0;
+  }
+  else if (left == NULL || right == NULL) {
+    return 1;
+  }
+  char leftd = Balance(left->left, left->right);
+  char rightd = Balance(right->left, right->right);
+  return leftd && rightd;
+}
+
+size_t getRight(Tree * tree) {
+  if (tree == NULL || tree->root == NULL) {
+    return 0;
+  }
+  size_t len = 0;
+  Right(tree->root, &len);
+  return len;
+}
+
+static Node_t * Right(Node_t * node, size_t * len) {
+  if (node == NULL) {
+    return NULL;
+  }
+  Node_t * left = Right(node->left, len);
+  Node_t * right = Right(node->right, len);
+  if (right != NULL && right->left == NULL && right->right == NULL) {
+    (*len)++;
+  }
+  return node;
+}
+
+size_t minCount(Tree * tree, TreeElem_t * min) {
+  Node_t * min_node = tree->root;
+  while (min_node->left != NULL) {
+    min_node = min_node->left;
+  }
+  *min = min_node->data;
+  size_t count = 0;
+  Node_t * current = tree->root;
+  while (current->left != NULL) {
+    if (current->data == *min) {
+      count++;
+    }
+    current = current->left;
+  }
+  if (current->data == *min) {
+    count++;
+  }
+  return count;
+}
+
+void treeInvert(Tree * tree) {
+  tree->root = invert(tree->root);
+}
+
+static Node_t * invert(Node_t * node) {
+  if (node == NULL) {
+    return NULL;
+  }
+  Node_t * right = invert(node->right);
+  Node_t * left = invert(node->left);
+  node->left = right;
+  node->right = left;
+  return node;
+}
+
+TreeErr getTree(Tree ** tree, TreeElem_t * arr, size_t n) {
+  if (*tree != NULL) {
+    return CREATE_FAILED;
+  }
+  treeInit(tree);
+  (*tree)->len = n;
+  (*tree)->root = (Node_t *) calloc(1, sizeof(Node_t));
+  (*tree)->root->data = arr[0];
+  get((*tree)->root, NULL, arr, n);
+  return SUCCESS;
+}
+
+static void get(Node_t * node, Node_t * parent, TreeElem_t * arr, size_t n) {
+  static size_t ind = 1;
+  if (ind >= n) {
+    return;
+  }
+  if (arr[ind] > arr[ind - 1]) {
+    return;
+  }
+  node->left = (Node_t *) calloc(1, sizeof(Node_t));
+  node->left->data = arr[ind++];
+  get(node->left, node, arr, n);
+  if (ind >= n) {
+    return;
+  }
+  if (parent != NULL && parent->left == node && arr[ind] > parent->data) {
+    return;
+  }
+  node->right = (Node_t *) calloc(1, sizeof(Node_t));
+  node->right->data = arr[ind++];
+  get(node->right, node, arr, n);
 }
 
 TreeErr treeInsert(Tree * tree, TreeElem_t elem) {
@@ -163,7 +280,7 @@ TreeErr subtreeDelete(Tree * tree, TreeElem_t elem) {
     return DELETE_FAILED;
   }
   if (parent == NULL) {
-    treeDestroy(tree);
+    treeDestroy(&tree);
     treeInit(&tree);
     return SUCCESS;
   }
@@ -194,9 +311,10 @@ static Node_t * findElem(Node_t * current, TreeElem_t elem, Node_t ** parent) {
   return current;
 }
 
-void treeDestroy(Tree * tree) {
-  DestroyNode(tree->root, &tree->len);
-  free(tree);
+void treeDestroy(Tree ** tree) {
+  DestroyNode((*tree)->root, &(*tree)->len);
+  free(*tree);
+  *tree = NULL;
 }
 
 static void DestroyNode(Node_t * node, size_t * len) {
@@ -221,28 +339,27 @@ TreeErr treeGetLen(Tree * tree, size_t * len) {
 TreeErr treePrint(Tree * tree, char * type) {
   treeVerify(tree, "BEFORE");
   PrintNode(tree->root, type);
+  printf("\n");
   treeVerify(tree, "AFTER");
   return SUCCESS;
 }
 
 static void PrintNode(Node_t * node, char * type) {
-  printf("(");
-  if (!strcmp(type, "PREORDER")) {
+  if (!strncmp(type, "PREORDER", 8)) {
     printf("%lg ", node->data);
   }
   if (node->left != NULL) {
     PrintNode(node->left, type);
   }
-  if (!strcmp(type, "INORDER")) {
+  if (!strncmp(type, "INORDER", 7)) {
     printf("%lg ", node->data);
   }
   if (node->right != NULL) {
     PrintNode(node->right, type);
   }
-  if (!strcmp(type, "POSTORDER")) {
+  if (!strncmp(type, "POSTORDER", 9)) {
     printf("%lg ", node->data);
   }
-  printf(")");
   return;
 }
 

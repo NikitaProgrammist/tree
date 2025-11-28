@@ -6,35 +6,37 @@
 
 int main() {
   clear();
+  TreeElem_t arr[] = {5, 3, 2, 0, 0, 1, 4, 8, 6, 9};
+  size_t n = 10;
   Tree * tree = NULL;
-  treeInit(&tree);
+  getTree(&tree, arr, n);
 
-  treeInsert(tree, 10);
-  treeInsert(tree, 12);
-  treeInsert(tree, 5);
-  treeInsert(tree, 2);
-  treeInsert(tree, 8);
-  treeInsert(tree, 4);
-  treeInsert(tree, 9);
-  treeInsert(tree, 11);
-  treeInsert(tree, 15);
+  Tree * tree2 = NULL;
+  treeInit(&tree2);
 
-  subtreeDelete(tree, 8);
-  treeDeleteElem(tree, 10);
-
-  TreeElem_t * arr = NULL;
-  size_t len = 0;
-  TreeToArray(tree, &arr, &len);
-
-  for (size_t i = 0; i < len; i++) {
-    printf("%lg ", arr[i]);
+  int len = 0;
+  TreeElem_t elem = 0;
+  scanf("%d", &len);
+  for (int i = 0; i < len; i++) {
+    scanf("%lg", &elem);
+    treeInsert(tree2, elem);
   }
-  printf("\n");
 
+  printf("empty: %d depth: %zu balance: %d\n", treeEmpty(tree), treeDepth(tree), checkBalance(tree));
+  TreeElem_t min = 0;
+  size_t count = minCount(tree, &min);
+  printf("right: %zu min_val: %lg min_count: %zu\n", getRight(tree), min, count);
 
+  //subtreeDelete(tree, 8);
+  //treeDeleteElem(tree, 10);
+
+  treePrint(tree, "INORDER");
+  treePrint(tree2, "INORDER");
+  treeInvert(tree);
+  treePrint(tree, "INORDER");
+
+  treeDestroy(&tree);
+  treeDestroy(&tree2);
   printf("%d %zu\n", treeEmpty(tree), treeDepth(tree));
-
-  treeDestroy(tree);
-  free(arr);
   return 0;
 }
